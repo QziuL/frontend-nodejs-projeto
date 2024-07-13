@@ -33,7 +33,7 @@ function App() {
 
   async function loadProdutos() {
     try {
-      const response = await api.get("/produtos");
+      const response = await api.get("/produto");
       setProdutos(response.data);
     } catch (error) {
       alert("Erro: " + error);
@@ -48,6 +48,11 @@ function App() {
       return;
     }
 
+    if (isNaN(Number.parseInt(valorRef.current.value))) {
+      alert("O valor do produto inválido.");
+      return;
+    }
+
     try {
       const response = await api.post("/produto", {
         nome: nomeRef.current?.value,
@@ -57,6 +62,10 @@ function App() {
       });
 
       setProdutos((allProdutos) => [response.data, ...allProdutos]);
+
+      nomeRef.current.value = "";
+      imageRef.current.value = "";
+      valorRef.current.value = "";
     } catch (error) {
       alert("Erro: " + error);
     }
@@ -65,23 +74,29 @@ function App() {
   async function handleUpdate(event: FormEvent) {
     event.preventDefault();
 
-    if (
-      !nomeRefModal.current ||
-      !imageRefModal.current ||
-      !valorRefModal.current
-    ) {
-      alert("Preencha todos os campos.");
-      return;
-    }
+    // if (
+    //   !nomeRefModal.current?.value ||
+    //   !imageRefModal.current?.value ||
+    //   !valorRefModal.current?.value
+    // ) {
+    //   alert("Preencha todos os campos.");
+    //   return;
+    // }
 
     try {
       await api.put("/produto", {
         data: {
           id: produtoEdit?._id,
-          nome: nomeRefModal.current.value,
+          nome: nomeRefModal.current?.value
+            ? nomeRefModal.current.value
+            : produtoEdit?.nome,
           disponivel: valueRadio,
-          valor: valorRefModal.current.value,
-          imgURL: imageRefModal.current.value,
+          valor: valorRefModal.current?.value
+            ? valorRefModal.current.value
+            : produtoEdit?.valor,
+          imgURL: imageRefModal.current?.value
+            ? imageRefModal.current.value
+            : produtoEdit?.imgURL,
         },
       });
 
@@ -123,7 +138,7 @@ function App() {
           <input
             ref={nomeRef}
             type="text"
-            placeholder="Digite o nome do produto..."
+            placeholder="Ex: Bananinha"
             className="w-full mb-5 p-2 rounded"
             required
           />
@@ -131,15 +146,14 @@ function App() {
           <input
             ref={imageRef}
             type="text"
-            placeholder="Link da imagem..."
+            placeholder="URL imagem"
             className="w-full mb-5 p-2 rounded"
             required
           />
           <label className="font-medium text-white">Valor:</label>
           <input
             ref={valorRef}
-            type="number"
-            placeholder="Digite o valor do produto..."
+            placeholder="Ex: 10.50"
             className="w-full mb-5 p-2 rounded"
             min="1"
             required
@@ -221,66 +235,63 @@ function App() {
         <br />
 
         <section className="flex flex-col gap-4">
-          {produtos.map((produto) => (
-            <article className="flex flex-row gap-8 w-full bg-white rounded p-2 relative hover:scale-105 duration-200">
-              <div className="w-40 h-28 bg-gray-500 rounded p-1 relative hover:scale-105 duration-200">
-                <img
-                  className="w-full h-full rounded"
-                  alt="imagem produto"
-                  src={produto.imgURL != "N/A" ? produto.imgURL : "#"}
-                />
-              </div>
-              <div className="my-3">
-                <p>
-                  <span className="font-bold">Nome:</span> {produto.nome}
-                </p>
-                <p>
-                  <span className="font-bold">Valor: </span>R${produto.valor}
-                </p>
-                <p>
-                  <span className="font-bold">Disponibilidade:</span>{" "}
-                  {produto.disponivel ? "DISPONIVEL" : "INDISPONIVEL"}
-                </p>
-              </div>
+          {produtos.length > 0 &&
+            produtos.map((produto) => (
+              <article className="flex flex-row gap-8 w-full bg-white rounded p-2 relative hover:scale-105 duration-200">
+                <div className="w-40 h-28 bg-gray-500 rounded p-1 relative hover:scale-105 duration-200">
+                  <img
+                    className="w-full h-full rounded"
+                    alt="imagem produto"
+                    src={produto.imgURL != "N/A" ? produto.imgURL : "#"}
+                  />
+                </div>
+                <div className="my-3">
+                  <p>
+                    <span className="font-bold">Nome:</span> {produto.nome}
+                  </p>
+                  <p>
+                    <span className="font-bold">Valor: </span>R${produto.valor}
+                  </p>
+                  <p>
+                    <span className="font-bold">Disponibilidade:</span>{" "}
+                    {produto.disponivel ? "DISPONIVEL" : "INDISPONIVEL"}
+                  </p>
+                </div>
 
-              <button
-                className="bg-blue-500 w-7 h-7 flex items-center justify-center rounded-lg absolute right-9 -top-2"
-                onClick={() => {
-                  setProdutoEdit(produto);
-                  setStateModal(true);
-                }}
-              >
-                <FiEdit size={18} color="#FFF" />
-              </button>
+                <button
+                  className="bg-blue-500 w-7 h-7 flex items-center justify-center rounded-lg absolute right-9 -top-2"
+                  onClick={() => {
+                    setProdutoEdit(produto);
+                    setStateModal(true);
+                  }}
+                >
+                  <FiEdit size={18} color="#FFF" />
+                </button>
 
-              <button
-                className="bg-red-500 w-7 h-7 flex items-center justify-center rounded-lg absolute -right-1 -top-2"
-                onClick={() => handleDelete(produto._id)}
-              >
-                <FiTrash size={18} color="#FFF" />
-              </button>
-            </article>
-          ))}
+                <button
+                  className="bg-red-500 w-7 h-7 flex items-center justify-center rounded-lg absolute -right-1 -top-2"
+                  onClick={() => handleDelete(produto._id)}
+                >
+                  <FiTrash size={18} color="#FFF" />
+                </button>
+              </article>
+            ))}
         </section>
 
         <Modal isOpen={openModal} onClose={() => setStateModal(false)}>
           <div className="w-full text-white p-2">
             <h1 className="font-bold text-2xl mb-2">Editar Informações</h1>
-            <button onClick={() => console.log(produtoEdit?.nome)}>
-              teste
-            </button>
             <form onSubmit={handleUpdate}>
               <label>Nome: </label>
               <input
                 ref={nomeRefModal}
-                type="text"
+                defaultValue={produtoEdit?.nome}
                 className="w-full mb-5 p-2 rounded text-black"
               />
 
               <label>Imagem:</label>
               <input
                 ref={imageRefModal}
-                type="text"
                 defaultValue={produtoEdit?.imgURL}
                 className="w-full mb-5 p-2 rounded text-black"
               />
@@ -288,7 +299,6 @@ function App() {
               <label>Valor: </label>
               <input
                 ref={valorRefModal}
-                type="number"
                 defaultValue={produtoEdit?.valor}
                 className="w-full mb-2 p-2 rounded text-black"
                 min="1"
